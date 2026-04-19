@@ -1,9 +1,9 @@
-// Lines of code: 3247 (2570 excluding comments and blank lines).
+#include <spdlog/spdlog.h>
+
 #include "config.h"
 #include "server.hpp"
 #include "worker.hpp"
 #include <cxxopts.hpp>
-#include <spdlog/spdlog.h>
 #include <string>
 
 // TODO:
@@ -37,8 +37,6 @@ int main(int argc, char *argv[]) {
   }
 
   auto io_context_ptr = boost::make_shared<boost::asio::io_context>();
-
-  StartGrpcWorker();
 
   StartHealthCheckWorker(io_context_ptr);
 

@@ -1,7 +1,6 @@
 #ifndef __WORKER_H
 #define __WORKER_H
 
-#include "../src/api/config_service.hpp"
 #include "config.h"
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
@@ -10,12 +9,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/system/error_code.hpp>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
 #include <spdlog/spdlog.h>
 
 namespace azugate {
@@ -100,25 +93,6 @@ inline void StartHealthCheckWorker(
     }
   });
   healthz_thread.detach();
-}
-
-// gRPC Worker.
-inline void StartGrpcWorker() {
-  // grpc server worker thread.
-  std::thread grpc_server_thread([&]() {
-    grpc::ServerBuilder server_builder;
-    // TODO: The server should listen only on the local address by default.
-    server_builder.AddListeningPort(
-        fmt::format("0.0.0.0:{}", g_azugate_admin_port),
-        grpc::InsecureServerCredentials());
-    ConfigServiceImpl config_service;
-    grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-    server_builder.RegisterService(&config_service);
-    std::unique_ptr<grpc::Server> server(server_builder.BuildAndStart());
-    SPDLOG_INFO("gRPC server is listening on port {}", g_azugate_admin_port);
-    server->Wait();
-  });
-  grpc_server_thread.detach();
 }
 
 } // namespace azugate

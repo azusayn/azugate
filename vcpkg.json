@@ -5,8 +5,6 @@
     "boost-system",
     "boost-thread",
     "boost-url",
-    "fmt",
-    "grpc",
     "gtest",
     "jwt-cpp",
     "nlohmann-json",
