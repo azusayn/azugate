@@ -43,7 +43,6 @@ constexpr size_t kDftHealthCheckGapSecond = 3;
 constexpr size_t kMaxBodyBufferSize = 1024 * 1024 * 100;
 // runtime shared variables.
 extern uint16_t g_azugate_port;
-extern uint16_t g_azugate_admin_port;
 // TODO: mTLS.
 extern std::string g_ssl_crt;
 extern std::string g_ssl_key;

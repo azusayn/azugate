@@ -227,6 +227,7 @@ extractTokenFromAuthorization(const std::string_view &auth_header) {
 
 // ref:
 // https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/oauth2_filter.
+// TODO: move these codes to Golang.
 template <typename T>
 inline bool externalAuthorization(network::PicoHttpRequest &request,
                                   boost::shared_ptr<T> sock_ptr,
@@ -363,7 +364,7 @@ inline bool extractMetaFromHeaders(utils::CompressionType &compression_type,
     }
     auto header_value = std::string(header.value, header.value_len);
     // header switch.
-    std::string_view header_name(header.name, header.name_len);
+    std::string header_name(header.name, header.name_len);
     header_name = utils::toLower(header_name);
     if (header_name == CRequest::kHeaderFieldAcceptEncoding) {
       compression_type = utils::GetCompressionType(header_value);
@@ -623,7 +624,6 @@ public:
     boost::shared_ptr<T> stream;
 
     if constexpr (is_ssl) {
-      // SPDLOG_WARN("using ssl connection");
       auto ssl_ctx =
           boost::make_shared<ssl::context>(ssl::context::sslv23_client);
       stream = boost::make_shared<T>(*io_context_ptr_, *ssl_ctx);
@@ -871,7 +871,8 @@ public:
   void handleLocalFileRequest() {
     // get local file path from request url.
     std::shared_ptr<char[]> full_local_file_path =
-        assembleFullLocalFilePath(kPathResourceFolder, target_url_);
+        // TODO: router.
+        assembleFullLocalFilePath("", target_url_);
     auto full_local_file_path_str = full_local_file_path.get();
     if (!std::filesystem::exists(full_local_file_path_str) ||
         !std::filesystem::is_regular_file(full_local_file_path_str)) {

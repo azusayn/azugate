@@ -1,5 +1,4 @@
 port: 8080
-admin_port: 50051
 # SSL certificates.
 crt: "../resources/localhost.crt"
 key: "../resources/localhost.key"
