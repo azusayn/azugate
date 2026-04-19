@@ -293,7 +293,7 @@ inline bool externalAuthorization(network::PicoHttpRequest &request,
     // generate azugate access_token and send it back to client.
     auto payload = "{}";
     std::string azugate_access_token =
-        utils::GenerateToken(payload, g_authorization_token_secret);
+        utils::GenerateToken(payload, g_jwt_public_key_pem);
     if (azugate_access_token == "") {
       SPDLOG_ERROR("failed to generate token");
       return false;
@@ -313,8 +313,7 @@ inline bool externalAuthorization(network::PicoHttpRequest &request,
     return false;
   }
   // verify token or get authorization code from client.
-  if (token.length() == 0 ||
-      !utils::VerifyToken(token, g_authorization_token_secret)) {
+  if (token.length() == 0 || !utils::VerifyToken(token, g_jwt_public_key_pem)) {
     boost::urls::url u(
         fmt::format("https://{}/authorize", g_external_auth_domain));
     auto params = u.params();

@@ -42,7 +42,7 @@ constexpr size_t kDftHealthCheckGapSecond = 3;
 // TODO: 100 MB.
 constexpr size_t kMaxBodyBufferSize = 1024 * 1024 * 100;
 // runtime shared variables.
-extern uint16_t g_azugate_port;
+extern uint16_t g_port;
 // TODO: mTLS.
 extern std::string g_ssl_crt;
 extern std::string g_ssl_key;
@@ -54,7 +54,7 @@ extern std::mutex g_config_mutex;
 // http(s) external oauth authorization.
 extern bool g_http_external_authorization;
 // used for generating and verifying tokens.
-extern std::string g_authorization_token_secret;
+extern std::string g_jwt_public_key_pem;
 
 // rate limitor.
 extern bool g_enable_rate_limiter;
@@ -115,7 +115,12 @@ std::optional<ConnectionInfo> GetTargetRoute(const ConnectionInfo &source);
 
 size_t GetRouterTableSize();
 
-bool LoadServerConfig(const std::string &path_config_file);
+struct ServerConfig {
+  uint16_t port;
+  std::string jwt_public_key_pem;
+};
+
+void LoadServerConfig(const ServerConfig &config);
 
 } // namespace azugate
 

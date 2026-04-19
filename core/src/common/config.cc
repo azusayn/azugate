@@ -33,7 +33,7 @@ template <> struct hash<azugate::ConnectionInfo> {
 } // namespace std
 
 namespace azugate {
-uint16_t g_azugate_port = 443;
+uint16_t g_port = 443;
 uint16_t g_azugate_admin_port = 50051;
 std::string g_path_config_file;
 std::unordered_set<std::string> g_ip_blacklist;
@@ -112,7 +112,7 @@ struct RouterEntry {
 std::unordered_map<ConnectionInfo, RouterEntry> g_exact_routes;
 std::vector<std::pair<ConnectionInfo, RouterEntry>> g_prefix_routes;
 // token.
-std::string g_authorization_token_secret;
+std::string g_jwt_public_key_pem;
 
 // rate limitor
 bool g_enable_rate_limiter = false;
@@ -280,33 +280,11 @@ bool azugate::ConnectionInfo::operator==(const ConnectionInfo &other) const {
          http_url == other.http_url;
 }
 
-bool LoadServerConfig(const std::string &path_config_file) {
-  try {
-    // parse and load configuration.
-    auto config = YAML::LoadFile(path_config_file);
-    // listening port.
-    g_azugate_port = config[kYamlFieldPort].as<uint16_t>();
-    g_azugate_admin_port = config[kYamlFieldAdminPort].as<uint16_t>();
-    // SSL certificates.
-    g_ssl_crt = config[kYamlFieldCrt].as<std::string>();
-    g_ssl_key = config[kYamlFieldKey].as<std::string>();
-    // external auth.
-    g_http_external_authorization =
-        config[kYamlFieldExternalHTTPAuthentication].as<bool>();
-    g_external_auth_domain =
-        config[kYamlFieldExternalAuthDomain].as<std::string>();
-    g_external_auth_client_id =
-        config[kYamlFieldExternalAuthClientID].as<std::string>();
-    g_external_auth_client_secret =
-        config[kYamlFieldExternalAuthClientSecret].as<std::string>();
-    g_external_auth_callback_url =
-        config[kYamlFieldExternalAuthCallbackUrl].as<std::string>();
-  } catch (...) {
-    return false;
-  }
-  // token secret.
-  g_authorization_token_secret = utils::GenerateSecret();
-  return true;
+void LoadServerConfig(const ServerConfig &config) {
+  g_port = config.port;
+  g_jwt_public_key_pem = config.jwt_public_key_pem;
+  // g_ssl_crt = config[kYamlFieldCrt].as<std::string>();
+  // g_ssl_key = config[kYamlFieldKey].as<std::string>();
 };
 
 } // namespace azugate
