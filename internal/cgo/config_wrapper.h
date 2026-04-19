@@ -5,10 +5,10 @@
 extern "C" {
 #endif
 
-struct ServerConfig {
+typedef struct {
   uint16_t port;
   const char *jwt_public_key_pem;
-};
+} ServerConfig;
 
 void ConfigServer(ServerConfig *config);
 
