@@ -1,6 +1,6 @@
 #ifndef __DISPATCHER_H
 #define __DISPATCHER_H
-#include "config.h"
+#include "router.h"
 #include "rate_limiter.h"
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/context.hpp>

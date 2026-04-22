@@ -1,17 +1,12 @@
 #include "../../include/config.h"
-#include "protocols.h"
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <functional>
 #include <mutex>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
-
-#include <string_view>
-#include <unordered_map>
+#include "router.h"
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -19,18 +14,7 @@
 #include <yaml-cpp/yaml.h>   
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-namespace std {
-template <> struct hash<azugate::ConnectionInfo> {
-  // TODO: redesign hash func.
-  size_t operator()(const azugate::ConnectionInfo &conn) const {
-    size_t h1 = hash<azugate::ProtocolType>()(conn.type);
-    // size_t h2 = hash<std::string>()(conn.address);
-    // size_t h3 = hash<uint16_t>()(conn.port);
-    size_t h4 = hash<std::string>()(conn.http_url);
-    return /* h1 ^ (h2 << 1) ^ (h3 << 2) ^ */ h1 ^ (h4 << 1);
-  }
-};
-} // namespace std
+
 
 namespace azugate {
 uint16_t g_port = 443;
@@ -65,55 +49,11 @@ void IgnoreSignalPipe() {
 #endif
 }
 
-// router.
-struct RouterEntry {
-  // used for round robin.
-  size_t next_index;
-  std::vector<ConnectionInfo> targets;
-
-  void AddTarget(ConnectionInfo &&conn) {
-    auto pred = [&](const ConnectionInfo &c) {
-      return conn.address == c.address && conn.http_url == c.http_url &&
-             conn.port == c.port && conn.type == c.type &&
-             conn.remote == c.remote;
-    };
-    auto it = std::find_if(targets.begin(), targets.end(), pred);
-    if (it == targets.end()) {
-      targets.emplace_back(conn);
-    }
-    return;
-  }
-
-  // TODO: exact match & prefix match.
-  void RemoveTarget(const ConnectionInfo &conn) {
-    auto it = std::remove(targets.begin(), targets.end(), conn);
-    if (it != targets.end()) {
-      targets.erase(it, targets.end());
-      if (next_index >= targets.size() && !targets.empty()) {
-        next_index %= targets.size();
-      }
-    }
-  }
-
-  std::optional<ConnectionInfo> GetNextTarget() {
-    if (targets.empty()) {
-      return std::nullopt;
-    }
-    ConnectionInfo &result = targets[next_index];
-    next_index = (next_index + 1) % targets.size();
-    return result;
-  }
-
-  bool Contains(const ConnectionInfo &conn) const {
-    return std::find(targets.begin(), targets.end(), conn) != targets.end();
-  }
-};
-
+// router
 std::unordered_map<ConnectionInfo, RouterEntry> g_exact_routes;
 std::vector<std::pair<ConnectionInfo, RouterEntry>> g_prefix_routes;
 // token.
 std::string g_jwt_public_key_pem;
-
 // rate limitor
 bool g_enable_rate_limiter = false;
 size_t g_num_token_per_sec = 100;

@@ -2,14 +2,13 @@
 #define __CONFIG_H
 #define AZUGATE_VERSION_STRING "azugate/1.0"
 
-#include "protocols.h"
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <vector>
 
 namespace azugate {
 // http server
@@ -101,23 +100,7 @@ std::pair<size_t, size_t> GetRateLimitorConfig();
 void AddHealthzList(std::string &&addr);
 const std::vector<std::string> &GetHealthzList();
 
-// router.
-struct ConnectionInfo {
-  ProtocolType type;
-  // currently IPv4.
-  std::string address;
-  uint16_t port = 0;
-  std::string http_url;
-  // access local file or remote endpoint.
-  bool remote;
-  bool operator==(const ConnectionInfo &other) const;
-};
 
-void AddRoute(ConnectionInfo &&source, ConnectionInfo &&target);
-
-std::optional<ConnectionInfo> GetTargetRoute(const ConnectionInfo &source);
-
-size_t GetRouterTableSize();
 
 struct ServerConfig {
   uint16_t port;

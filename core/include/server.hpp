@@ -52,7 +52,9 @@ public:
       SPDLOG_ERROR("worker thread exits");
     }
   }
-
+  
+  // TODO: each thread should have its own acceptor (e.g., via SO_REUSEPORT)
+  // to avoid contention in the kernel.
   void onAccept(boost::shared_ptr<boost::asio::ip::tcp::socket> sock_ptr,
                 boost::system::error_code ec) {
     if (ec) {
@@ -70,7 +72,6 @@ public:
     }
     ConnectionInfo src_conn_info;
     src_conn_info.address = source_endpoint.address().to_string();
-    // TODO: support async log, this is really slow...slow...slow...
     SPDLOG_DEBUG("connection from {}", src_conn_info.address);
     if (!azugate::Filter(sock_ptr, src_conn_info)) {
       safeCloseSocket(sock_ptr);
