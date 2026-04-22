@@ -44,10 +44,6 @@ std::string g_ssl_crt;
 std::string g_ssl_key;
 std::mutex g_config_mutex;
 
-constexpr size_t kLoggerQueueSize = 8192;
-constexpr size_t kLoggerThreadsCount = 1;
-constexpr std::string_view kDefaultLoggerName = "azugate logger"; 
-
 // ref: https://github.com/gabime/spdlog/wiki/3.-Custom-formatting.
 void InitLogger() {
   spdlog::init_thread_pool(kLoggerQueueSize, kLoggerThreadsCount);

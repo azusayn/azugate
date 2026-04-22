@@ -38,9 +38,13 @@ constexpr std::string_view kDftHttpPort = "80";
 constexpr std::string_view kDftHttpsPort = "443";
 constexpr size_t kDftStringReservedBytes = 256;
 constexpr size_t kDftHealthCheckGapSecond = 3;
-
 // TODO: 100 MB.
 constexpr size_t kMaxBodyBufferSize = 1024 * 1024 * 100;
+// logger
+constexpr size_t kLoggerQueueSize = 8192;
+constexpr size_t kLoggerThreadsCount = 1;
+constexpr std::string_view kDefaultLoggerName = "azugate logger"; 
+
 // runtime shared variables.
 extern uint16_t g_port;
 // TODO: mTLS.
