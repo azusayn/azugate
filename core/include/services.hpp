@@ -7,6 +7,7 @@
 #include "crequest.h"
 #include "network_wrapper.hpp"
 #include "protocols.h"
+#include "router.h"
 #include "string_op.h"
 #include <boost/asio.hpp>
 #include <boost/asio/buffers_iterator.hpp>
@@ -229,112 +230,15 @@ extractTokenFromAuthorization(const std::string_view &auth_header) {
 // https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/oauth2_filter.
 // TODO: move these codes to Golang.
 template <typename T>
-inline bool externalAuthorization(network::PicoHttpRequest &request,
-                                  boost::shared_ptr<T> sock_ptr,
-                                  const std::string &token) {
-  using namespace boost::beast;
-
-  // get authorization code.
-  auto code = network::ExtractParamFromUrl(
-      std::string(request.path, request.len_path), "code");
-  if (code != "") {
-    using namespace boost::asio;
-    boost::system::error_code ec;
-    ssl::context ctx(ssl::context::sslv23_client);
-    // TODO: integrate the io_context with the server's.
-    io_context ioc;
-    ip::tcp::resolver resolver(ioc);
-    ssl::stream<boost::beast::tcp_stream> stream(ioc, ctx);
-    auto results = resolver.resolve(g_external_auth_domain, kDftHttpsPort, ec);
-    if (ec) {
-      SPDLOG_WARN("failed to resolve host: {}", ec.message());
-      return false;
-    }
-    boost::beast::get_lowest_layer(stream).connect(results, ec);
-    if (ec) {
-      SPDLOG_WARN("failed to connect to host: {}", ec.message());
-      return false;
-    }
-    auto _ = stream.handshake(ssl::stream_base::client, ec);
-    if (ec) {
-      SPDLOG_WARN("failed to do handshake: {}", ec.message());
-      return false;
-    }
-    // TODO: standard oauth workflow.
-    // Send code to Auth0 server.
-    http::request<http::string_body> req{http::verb::post, "/oauth/token", 11};
-    req.set(http::field::content_type, "application/x-www-form-urlencoded");
-    req.set(http::field::host, g_external_auth_domain);
-    req.set(http::field::user_agent, AZUGATE_VERSION_STRING);
-    boost::urls::url u;
-    auto params = u.params();
-    params.set("grant_type", "authorization_code");
-    params.set("client_id", g_external_auth_client_id);
-    params.set("client_secret", g_external_auth_client_secret);
-    params.set("code", code);
-    params.set("redirect_uri", g_external_auth_callback_url);
-    req.body() = u.encoded_query();
-    req.prepare_payload();
-    http::write(stream, req, ec);
-    if (ec) {
-      SPDLOG_WARN("failed to send http request: {}", ec.message());
-      return false;
-    }
-    // read response from Auth0.
-    boost::beast::flat_buffer buffer;
-    http::response<http::string_body> auth0_resp;
-    http::read(stream, buffer, auth0_resp);
-    auto json = nlohmann::json::parse(auth0_resp.body());
-    if (!json.contains("access_token")) {
-      SPDLOG_WARN("failed to get access token from ID provider");
-      return false;
-    }
-    auto token = json["access_token"].get<std::string>();
-    // generate azugate access_token and send it back to client.
-    auto payload = "{}";
-    std::string azugate_access_token =
-        utils::GenerateToken(payload, g_jwt_public_key_pem);
-    if (azugate_access_token == "") {
-      SPDLOG_ERROR("failed to generate token");
-      return false;
-    }
-    http::response<http::string_body> client_resp{http::status::found, 11};
-    client_resp.set(
-        http::field::set_cookie,
-        fmt::format("azugate_access_token={}", azugate_access_token));
-    client_resp.set(http::field::location, "/welcome.html");
-    // TODO: redirect web page.
-    client_resp.body() = "<h1>Login Successfully</h1>";
-    client_resp.prepare_payload();
-    http::write(*sock_ptr, client_resp, ec);
-    if (ec) {
-      SPDLOG_ERROR("failed to write response to client");
-    }
-    return false;
+inline bool authentication(network::PicoHttpRequest &request,
+                           boost::shared_ptr<T> sock_ptr,
+                           const std::string &token) {
+  return true;
+  if (token.length() != 0 && utils::VerifyToken(token, g_jwt_public_key_pem)) {
+    return true;
   }
-  // verify token or get authorization code from client.
-  if (token.length() == 0 || !utils::VerifyToken(token, g_jwt_public_key_pem)) {
-    boost::urls::url u(
-        fmt::format("https://{}/authorize", g_external_auth_domain));
-    auto params = u.params();
-    params.set("response_type", "code");
-    params.set("client_id", g_external_auth_client_id);
-    params.set("redirect_uri", g_external_auth_callback_url);
-    params.set("scope", "openid");
-    // TODO: deal with state.
-    params.set("state", "1111");
-    // redirect to oauth login page.
-    http::response<http::string_body> resp{http::status::found, 11};
-    resp.set(http::field::location, u.buffer());
-    resp.set(http::field::connection, CRequest::kConnectionClose);
-    resp.prepare_payload();
-    boost::system::error_code ec;
-    http::write(*sock_ptr, resp, ec);
-    if (ec) {
-      SPDLOG_WARN("failed to write http response");
-    }
-    return false;
-  }
+  // TODO: the external auth type should be configurable.
+  // additional auth process (currently support OAuth)
   return true;
 }
 
@@ -484,7 +388,7 @@ public:
     }
     // TODO: external authoriation and router.
     if (g_http_external_authorization && !isWebSocket_ &&
-        !externalAuthorization(request_, sock_ptr_, token_)) {
+        !authentication(request_, sock_ptr_, token_)) {
       async_accpet_cb_();
       return;
     }

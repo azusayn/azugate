@@ -1,0 +1,1 @@
+cmake -B build -DCMAKE_MAKE_PROGRAM="/usr/bin/make" --preset=default .
