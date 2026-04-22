@@ -11,9 +11,6 @@ namespace utils {
 constexpr int kDftExpiredDurationHour = 1;
 constexpr std::string_view kDftTokenIssuer = "azugate";
 
-std::string GenerateToken(const std::string &payload,
-                          const std::string &secret);
-
 bool VerifyToken(const std::string &token, const std::string &secret);
 
 } // namespace utils

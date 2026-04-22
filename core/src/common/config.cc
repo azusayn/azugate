@@ -1,5 +1,4 @@
 #include "../../include/config.h"
-#include "auth.h"
 #include "protocols.h"
 #include <algorithm>
 #include <cstddef>
@@ -17,8 +16,9 @@
 #include <utility>
 #include <vector>
 #include <yaml-cpp/node/parse.h>
-#include <yaml-cpp/yaml.h>
-
+#include <yaml-cpp/yaml.h>   
+#include <spdlog/async.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 namespace std {
 template <> struct hash<azugate::ConnectionInfo> {
   // TODO: redesign hash func.
@@ -44,12 +44,16 @@ std::string g_ssl_crt;
 std::string g_ssl_key;
 std::mutex g_config_mutex;
 
-// logger.
-// TODO: async logging system.
+constexpr size_t kLoggerQueueSize = 8192;
+constexpr size_t kLoggerThreadsCount = 1;
+constexpr std::string_view kDefaultLoggerName = "azugate logger"; 
+
+// ref: https://github.com/gabime/spdlog/wiki/3.-Custom-formatting.
 void InitLogger() {
-  // setup logger.
-  // ref: https://github.com/gabime/spdlog/wiki/3.-Custom-formatting.
-  // for production, use this logger:
+  spdlog::init_thread_pool(kLoggerQueueSize, kLoggerThreadsCount);
+  auto logger = spdlog::create_async<spdlog::sinks::stdout_color_sink_mt>(std::string(kDefaultLoggerName));
+  spdlog::set_default_logger(logger);
+  // production:
   // spdlog::set_pattern("[%^%l%$] %t | %D %H:%M:%S | %v");
   // with source file and line when debug:
   spdlog::set_pattern("[%^%l%$] %t | %D %H:%M:%S | %s:%# | %v");
