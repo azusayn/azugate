@@ -13,64 +13,32 @@
 
 ### Build
 
-You will need a compiler that supports c++20, along with CMake and vcpkg, to build this project. The project builds successfully on both M2 Mac and x86-64 Linux.
+The system uses Go as the application layer, interfacing with a C++ core via CGO bindings.
+The azugate core requires a compiler that supports C++20, CMake and vcpkg.
+The shell requires a go compiler.
+It has been tested on Apple Silicon(M2) Macs and x86-64 Linux.
  
-```shell
-  mkdir build && cd build
-  cmake --preset=default ..
-  cmake --build .
-```
-
-### Build Image
-
-```
-  docker buildx build --platform linux/amd64,linux/arm64 -t azusaing/azugate:latest .
-```
-
-### Run (docker)
-
-```shell
-  # default configurations:
-  docker run -p 8080:8080 -p 50051:50051 azusaing/azugate:latest
+```bash
+  # 1. Build azugate core
+  cd core
+  make all
   
-  # static files & custom configurations:
-  docker run \
-  -p 8080:8080 \
-  -p 50051:50051 \
-  -v ./resources:/app/resources \
-  -v ./config.yaml:/app/bin/config.yaml azusaing/azugate:latest \
-  ./azugate -c config.yaml
-
-  # or use docker-compose under the root folder:
-  docker-compose up -d
+  # 2. Build shell
+  cd ..
+  go build -ldflags="-s -w" ./cmd/azugate
 ```
 
 ### Dev Tools
 
 #### wrk
 
-```shell
+```bash
   wrk -t1 -c20 -d10s http://localhost:5080
-```
-
-#### ab
-
-```shell
-  wrk -t1 -c20 -d10s http://localhost:5080
-```
-
-#### buf
-
-```shell
- # under proto/
-  buf lint
-  buf format -w
-  buf generate
 ```
 
 ### Perf
 
-```shell
+```bash
  # CPU: 12th Gen Intel(R) Core(TM) i5-12600K
  # Cores: 2
  # Command: 

@@ -1,20 +1,17 @@
 #include "../include/config.h"
+#include "router.h"
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
 #include <optional>
+#include <spdlog/async.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <string>
-#include "router.h"
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <yaml-cpp/node/parse.h>
-#include <yaml-cpp/yaml.h>   
-#include <spdlog/async.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-
 
 namespace azugate {
 uint16_t g_port = 443;
@@ -31,7 +28,8 @@ std::mutex g_config_mutex;
 // ref: https://github.com/gabime/spdlog/wiki/3.-Custom-formatting.
 void InitLogger() {
   spdlog::init_thread_pool(kLoggerQueueSize, kLoggerThreadsCount);
-  auto logger = spdlog::create_async<spdlog::sinks::stdout_color_sink_mt>(std::string(kDefaultLoggerName));
+  auto logger = spdlog::create_async<spdlog::sinks::stdout_color_sink_mt>(
+      std::string(kDefaultLoggerName));
   spdlog::set_default_logger(logger);
   // production:
   // spdlog::set_pattern("[%^%l%$] %t | %D %H:%M:%S | %v");

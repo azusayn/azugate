@@ -16,7 +16,7 @@ package binding
 #cgo CXXFLAGS: -isystem ../build/vcpkg_installed/x64-linux/include
 #cgo LDFLAGS: -L../build/vcpkg_installed/x64-linux/lib -L../build
 #cgo LDFLAGS: -lazugate_core -lspdlog -lfmt -lz -lboost_coroutine -lboost_context -lboost_thread -lboost_date_time -lboost_regex
-#cgo LDFLAGS: -lboost_atomic -lboost_chrono -lboost_container -lboost_url -lyaml-cpp -lssl -lcrypto -ldl -lstdc++ -lm
+#cgo LDFLAGS: -lboost_atomic -lboost_chrono -lboost_container -lboost_url -lssl -lcrypto -ldl -lstdc++ -lm
 #include "azugate.h"
 */
 import "C"

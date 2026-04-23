@@ -1,9 +1,8 @@
-#include <spdlog/spdlog.h>
-
 #include "config.h"
 #include "server.hpp"
 #include "worker.hpp"
-#include <cxxopts.hpp>
+#include <spdlog/spdlog.h>
+
 extern "C" {
 
 void azugate_start() {

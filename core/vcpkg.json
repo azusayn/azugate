@@ -10,8 +10,6 @@
     "nlohmann-json",
     "openssl",
     "spdlog",
-    "yaml-cpp",
-    "zlib",
-    "cxxopts"
+    "zlib"
   ]
 }
