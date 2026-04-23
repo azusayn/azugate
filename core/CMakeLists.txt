@@ -20,10 +20,16 @@ find_package(ZLIB REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(cxxopts CONFIG REQUIRED)
 
-set(CORE_INCLUDES_DIR include cgo)
+set(CORE_INCLUDES_DIR include binding)
 set(THIRD_PARTY_INCLUDES_DIR "third_party")
-file(GLOB_RECURSE CORE_SOURCES "src/*.cc" "cgo/*.cc") 
-file(GLOB_RECURSE THIRD_PARTY_SOURCES "third_party/*.cc" "third_party/*.c")
+file(GLOB_RECURSE CORE_SOURCES
+    "src/*.cc"
+    "binding/azugate.cc"
+) 
+file(GLOB_RECURSE THIRD_PARTY_SOURCES
+    "third_party/*.cc"
+    "third_party/*.c"
+)
 
 # library for all the apps.
 add_library(azugate_core STATIC
