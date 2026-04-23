@@ -1,29 +1,27 @@
-#include "protocols.h"
-#include <cstddef>
-
 #include "router.h"
-
-namespace std {
-template <> struct hash<azugate::ConnectionInfo> {
-  size_t operator()(const azugate::ConnectionInfo &conn) const {
-    size_t h1 = hash<azugate::ProtocolType>()(conn.type);
-    size_t h2 = hash<std::string>()(conn.http_url);
-    return h1 ^ (h2 << 1);
-  }
-};
-} // namespace std
 
 namespace azugate {
 
+// perfect match and prefix match.
 bool ConnectionInfo::operator==(const ConnectionInfo &other) const {
-  return false;
+  if (type != other.type) {
+    return false;
+  }
+  if (type == ProtocolTypeTcp) {
+    return downstream_address == other.downstream_address;
+  }
+  return (type == ProtocolTypeHttp || type == ProtocolTypeWebSocket) &&
+         http_url == other.http_url;
 }
 
+// TODO: decouple RouterEntry from load balancing strategy.
+// Introduce an abstraction layer (e.g. strategy/policy) so 
+// Round-Robin implementation is transparent.
 void RouterEntry::AddTarget(ConnectionInfo &&conn) {
   auto pred = [&](const ConnectionInfo &c) {
-    return conn.address == c.address && conn.http_url == c.http_url &&
-           conn.port == c.port && conn.type == c.type &&
-           conn.remote == c.remote;
+    return conn.downstream_address == c.downstream_address && conn.http_url == c.http_url &&
+           conn.downstream_port == c.downstream_port && conn.type == c.type &&
+           conn.is_remote == c.is_remote;
   };
   auto it = std::find_if(targets.begin(), targets.end(), pred);
   if (it == targets.end()) {

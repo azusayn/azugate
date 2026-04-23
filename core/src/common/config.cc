@@ -208,18 +208,6 @@ std::optional<ConnectionInfo> GetTargetRoute(const ConnectionInfo &source) {
 
 size_t GetRouterTableSize() { return g_exact_routes.size(); }
 
-// perfect match and prefix match.
-bool azugate::ConnectionInfo::operator==(const ConnectionInfo &other) const {
-  if (type != other.type) {
-    return false;
-  }
-  if (type == ProtocolTypeTcp) {
-    return address == other.address;
-  }
-  return (type == ProtocolTypeHttp || type == ProtocolTypeWebSocket) &&
-         http_url == other.http_url;
-}
-
 void LoadServerConfig(const ServerConfig &config) {
   g_port = config.port;
   g_jwt_public_key_pem = config.jwt_public_key_pem;

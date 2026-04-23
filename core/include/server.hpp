@@ -71,7 +71,7 @@ public:
       return;
     }
     ConnectionInfo src_conn_info;
-    src_conn_info.address = source_endpoint.address().to_string();
+    src_conn_info.downstream_address = source_endpoint.address().to_string();
     SPDLOG_DEBUG("connection from {}", src_conn_info.address);
     if (!azugate::Filter(sock_ptr, src_conn_info)) {
       safeCloseSocket(sock_ptr);

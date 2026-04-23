@@ -434,13 +434,13 @@ public:
     }
     target_url_ = target_conn_info_opt->http_url;
 
-    if (!target_conn_info_opt->remote) {
+    if (!target_conn_info_opt->is_remote) {
       handleLocalFileRequest();
       async_accpet_cb_();
       return;
     }
-    auto target_address = target_conn_info_opt->address;
-    auto target_port = target_conn_info_opt->port;
+    auto target_address = target_conn_info_opt->downstream_address;
+    auto target_port = target_conn_info_opt->downstream_port;
     auto target_protocol = target_conn_info_opt->type;
     if (target_address == "") {
       SPDLOG_ERROR("invalid target address");
