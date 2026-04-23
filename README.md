@@ -13,12 +13,12 @@
 
 ### Build
 
-The system uses Go as the application layer, interfacing with a C++ core via CGO bindings.
-The azugate core requires a compiler that supports C++20, CMake and vcpkg.
-The shell requires a go compiler.
-It has been tested on Apple Silicon(M2) Macs and x86-64 Linux.
- 
 ```bash
+  # The system uses Go as the application layer, interfacing with a C++ core via CGO bindings.
+  # The azugate core requires a compiler that supports C++20, CMake and vcpkg.
+  # The shell requires a go compiler.
+  # It has been tested on Apple Silicon(M2) Macs and x86-64 Linux.
+  
   # 1. Build azugate core
   cd core
   make all
