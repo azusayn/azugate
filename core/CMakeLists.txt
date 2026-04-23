@@ -20,25 +20,23 @@ find_package(ZLIB REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(cxxopts CONFIG REQUIRED)
 
-set(COMMON_INCLUDES_DIR "include")
+set(CORE_INCLUDES_DIR include cgo)
 set(THIRD_PARTY_INCLUDES_DIR "third_party")
-file(GLOB_RECURSE COMMON_SOURCES "src/common/*.cc")
+file(GLOB_RECURSE CORE_SOURCES "src/*.cc" "cgo/*.cc") 
 file(GLOB_RECURSE THIRD_PARTY_SOURCES "third_party/*.cc" "third_party/*.c")
 
 # library for all the apps.
-add_library(common STATIC
-${COMMON_SOURCES}
+add_library(azugate_core STATIC
+${CORE_SOURCES}
 ${THIRD_PARTY_SOURCES}
-${API_SOURCES}
 )
 
-target_include_directories(common PUBLIC
-${COMMON_INCLUDES_DIR} 
+target_include_directories(azugate_core PUBLIC
+${CORE_INCLUDES_DIR} 
 ${THIRD_PARTY_INCLUDES_DIR}
-${API_INCLUDES_DIR}
 )
 
-target_link_libraries(common
+target_link_libraries(azugate_core
 spdlog::spdlog
 ZLIB::ZLIB
 Boost::asio
@@ -47,18 +45,7 @@ Boost::url
 yaml-cpp::yaml-cpp
 nlohmann_json::nlohmann_json
 cxxopts::cxxopts
+Boost::system
 ${OPENSSL_LIBRARIES}
 ${jwt-cpp_LIBRARIES}
 )
-
-# apps.
-add_executable(azugate
-"src/app/azugate.cc"
-)
-
-target_link_libraries(azugate
-common
-Boost::system
-)
-
-

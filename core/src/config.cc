@@ -1,4 +1,4 @@
-#include "../../include/config.h"
+#include "../include/config.h"
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
