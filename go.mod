@@ -8,4 +8,5 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 )
