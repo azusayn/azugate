@@ -73,7 +73,6 @@ extern std::string g_external_auth_client_id;
 extern std::string g_external_auth_client_secret;
 extern std::string g_external_auth_callback_url;
 
-void InitLogger();
 
 void IgnoreSignalPipe();
 
