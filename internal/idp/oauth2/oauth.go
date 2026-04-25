@@ -1,9 +1,11 @@
 package oauth
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 
 	"golang.org/x/oauth2"
 )
@@ -50,12 +52,23 @@ func (p *IdentityProvider) GetAuthCodeURL() (string, string, string) {
 	return authURL, state, verifier
 }
 
+// TODO: azutils...
 func genRandomBytes(length int) []byte {
 	bytes := make([]byte, length)
 	_, _ = rand.Read(bytes)
 	return bytes
 }
 
-func (p *IdentityProvider) ExchangeToken() error {
-	panic("unimplemented")
+// ExchangeToken retrieves the access token from the authorization response,
+// returning it if no error occurs.
+func (p *IdentityProvider) ExchangeToken(ctx context.Context, code string) (string, error) {
+	token, err := p.Config.Exchange(ctx, code)
+	if err != nil {
+		return "", err
+	}
+	accessToken, ok := token.Extra("access_token").(string)
+	if !ok {
+		return "", errors.New("missing access token from authorization response")
+	}
+	return accessToken, nil
 }
