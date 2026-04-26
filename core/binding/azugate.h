@@ -14,6 +14,12 @@ typedef struct {
 
 void azugate_load_config(BindingServerConfig);
 
+void azugate_add_prefix_match_route(const char *source_url,
+                                    const char *target_url, int is_local);
+
+void azugate_add_path_match_route(const char *source_url,
+                                  const char *target_url, int is_local);
+
 #ifdef __cplusplus
 }
 #endif

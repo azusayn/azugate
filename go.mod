@@ -5,6 +5,7 @@ go 1.26.2
 require (
 	github.com/azusayn/azutils v0.0.0-20260327170118-fd8c25b017dc
 	golang.org/x/oauth2 v0.36.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

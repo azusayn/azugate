@@ -1,10 +1,9 @@
 #include "../include/config.h"
-#include "router.h"
+#include <csignal>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
-#include <optional>
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -34,11 +33,6 @@ void IgnoreSignalPipe() {
 #endif
 }
 
-// router
-std::unordered_map<ConnectionInfo, RouterEntry> g_exact_routes;
-std::vector<std::pair<ConnectionInfo, RouterEntry>> g_prefix_routes;
-// token.
-std::string g_jwt_public_key_pem;
 // rate limitor
 bool g_enable_rate_limiter = false;
 size_t g_num_token_per_sec = 100;
@@ -50,10 +44,8 @@ std::vector<std::string> g_healthz_list;
 
 // external auth
 bool g_http_external_authorization = false;
-std::string g_external_auth_domain;
-std::string g_external_auth_client_id;
-std::string g_external_auth_client_secret;
-std::string g_external_auth_callback_url;
+// public key for verifying the token.
+std::string g_jwt_public_key_pem;
 
 std::string GetConfigPath() {
   std::lock_guard<std::mutex> lock(g_config_mutex);
@@ -121,77 +113,6 @@ const std::vector<std::string> &GetHealthzList() {
   std::lock_guard<std::mutex> lock(g_config_mutex);
   return g_healthz_list;
 }
-
-inline bool prefixMatchEqual(const ConnectionInfo &source_conn_info,
-                             const ConnectionInfo &rule_conn_info) {
-  return source_conn_info.http_url.starts_with(rule_conn_info.http_url.substr(
-             0, rule_conn_info.http_url.find('*'))) &&
-         source_conn_info.type == rule_conn_info.type;
-}
-
-void AddRoute(ConnectionInfo &&source, ConnectionInfo &&target) {
-  if (source.http_url.find("*") != std::string::npos) {
-    SPDLOG_DEBUG("add prefix match rule: {} -> {}", source.http_url,
-                 target.http_url);
-    for (auto &route : g_prefix_routes) {
-      auto http_url = route.first.http_url;
-      if (prefixMatchEqual(source, route.first)) {
-        route.second.AddTarget(std::move(target));
-        return;
-      }
-    }
-    RouterEntry router_entry{};
-    router_entry.AddTarget(std::move(target));
-    g_prefix_routes.emplace_back(std::move(source), std::move(router_entry));
-    return;
-  }
-  // exact match.
-  auto er_it = g_exact_routes.find(source);
-  if (er_it != g_exact_routes.end()) {
-    er_it->second.AddTarget(std::move(target));
-    return;
-  }
-  RouterEntry router_entry{};
-  router_entry.AddTarget(std::move(target));
-  g_exact_routes.emplace(std::move(source), std::move(router_entry));
-  return;
-}
-
-std::optional<ConnectionInfo> GetTargetRoute(const ConnectionInfo &source) {
-  std::lock_guard<std::mutex> lock(g_config_mutex);
-  // exact match first.
-  auto it = g_exact_routes.find(source);
-  if (it != g_exact_routes.end() && !it->second.targets.empty()) {
-    auto next_target = it->second.GetNextTarget();
-    return next_target;
-  }
-  // prefix match.
-  for (auto &route : g_prefix_routes) {
-    if (!prefixMatchEqual(source, route.first)) {
-      continue;
-    }
-    auto target = route.second.GetNextTarget();
-    auto &target_url = target->http_url;
-    if (target_url.size() >= 2 &&
-        target_url.compare(target_url.size() - 2, 2, "/*") == 0) {
-      std::string target_prefix = target_url.substr(0, target_url.size() - 2);
-      std::string suffix = source.http_url;
-      if (suffix.find(target_prefix) == 0) {
-        suffix = suffix.substr(target_prefix.size());
-      }
-      if (!target_prefix.empty() && target_prefix.back() != '/' &&
-          (suffix.empty() || suffix.front() != '/')) {
-        target_prefix += '/';
-      }
-      target->http_url = target_prefix + suffix;
-    }
-    return target;
-  }
-  SPDLOG_WARN("no path found for: {}", source.http_url);
-  return std::nullopt;
-}
-
-size_t GetRouterTableSize() { return g_exact_routes.size(); }
 
 void LoadConfig(ServerConfig config) {
   g_port = config.port;

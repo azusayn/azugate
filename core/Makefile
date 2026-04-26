@@ -21,9 +21,9 @@ config:
 # which causes the Go compiler to detect a source change and relink.
 build:
 	@if [ "$$(uname)" = "Darwin" ]; then \
-		printf 'package binding\n\nconst buildID = "%s"\n' $$(uuidgen | tr '[:upper:]' '[:lower:]') > binding/version.go; \
+		printf 'package binding\n\nconst AzugateCoreBuildID = "%s"\n' $$(uuidgen | tr '[:upper:]' '[:lower:]') > binding/version.go; \
 	else \
-		printf 'package binding\n\nconst buildID = "%s"\n' $$(cat /proc/sys/kernel/random/uuid) > binding/version.go; \
+		printf 'package binding\n\nconst AzugateCoreBuildID = "%s"\n' $$(cat /proc/sys/kernel/random/uuid) > binding/version.go; \
 	fi
 	@cmake --build build --parallel $(nproc)
 

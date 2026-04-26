@@ -1,0 +1,7 @@
+port: 8080
+routes:
+  - match:
+      path: "/"
+    route:
+      local: false
+      to: "baidu.com"

@@ -4,10 +4,10 @@
 
 namespace azugate {
 
-// TODO: decouple routing logic from ConnectionInfo. This struct 
-// should only represent immutable connection metadata, and must 
+// TODO: decouple routing logic from ConnectionInfo. This struct
+// should only represent immutable connection metadata, and must
 // not participate in routing strategy decisions directly.
-  struct ConnectionInfo {
+struct ConnectionInfo {
   ProtocolType type;
   // IPv4/IPv6 address string.
   std::string downstream_address;
@@ -18,13 +18,7 @@ namespace azugate {
   bool operator==(const ConnectionInfo &other) const;
 };
 
-void AddRoute(ConnectionInfo &&source, ConnectionInfo &&target);
-
-std::optional<ConnectionInfo> GetTargetRoute(const ConnectionInfo &source);
-
-size_t GetRouterTableSize();
-
-struct RouterEntry {
+struct RouteAction {
   // used for round robin.
   size_t next_index;
   std::vector<ConnectionInfo> targets;
@@ -38,6 +32,14 @@ struct RouterEntry {
   bool Contains(const ConnectionInfo &conn) const;
 };
 
+// router API.
+void AddPrefixMatchRoute(std::string source_url, std::string target_url,
+                         bool is_local);
+
+void AddPathMatchRoute(std::string source_url, std::string target_url,
+                       bool is_local);
+
+std::optional<ConnectionInfo> GetRouteTarget(const std::string source_url);
 } // namespace azugate
 
 namespace std {

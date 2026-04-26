@@ -5,13 +5,12 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <string_view>
 namespace azugate {
-constexpr std::string_view ProtocolTypeHttp = "http";
-constexpr std::string_view ProtocolTypeHttps = "https";
-constexpr std::string_view ProtocolTypeTcp = "tcp";
-constexpr std::string_view ProtocolTypeUdp = "udp";
-constexpr std::string_view ProtocolTypeGrpc = "grpc";
-constexpr std::string_view ProtocolTypeWebSocket = "websocket";
-constexpr std::string_view ProtocolTypeUnknown = "";
+constexpr std::string_view kProtocolTypeHttp = "http";
+constexpr std::string_view kProtocolTypeTcp = "tcp";
+constexpr std::string_view kProtocolTypeUdp = "udp";
+constexpr std::string_view kProtocolTypeGrpc = "grpc";
+constexpr std::string_view kProtocolTypeWebSocket = "websocket";
+constexpr std::string_view kProtocolTypeUnknown = "";
 
 using ProtocolType = std::string_view;
 

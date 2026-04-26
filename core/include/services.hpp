@@ -233,7 +233,10 @@ template <typename T>
 inline bool authentication(network::PicoHttpRequest &request,
                            boost::shared_ptr<T> sock_ptr,
                            const std::string &token) {
-  return true;
+  // TODO:; only for testing...
+  if (g_jwt_public_key_pem.length() != 0) {
+    return true;
+  }
   if (token.length() != 0 && utils::VerifyToken(token, g_jwt_public_key_pem)) {
     return true;
   }
@@ -386,7 +389,6 @@ public:
       async_accpet_cb_();
       return;
     }
-    // TODO: external authoriation and router.
     if (g_http_external_authorization && !isWebSocket_ &&
         !authentication(request_, sock_ptr_, token_)) {
       async_accpet_cb_();
@@ -416,11 +418,17 @@ public:
   inline void route() {
     using namespace boost::beast;
     boost::system::error_code ec;
-    source_connection_info_.http_url =
-        std::string(request_.path, request_.len_path);
+
+    auto source_url = std::string(request_.path, request_.len_path);
+    // NOTE: see the Go function normalizeURL for the specifed URL rules.
+    if (source_url == "/") {
+      source_url = "";
+    }
+    source_connection_info_.http_url = source_url;
     source_connection_info_.type =
-        isWebSocket_ ? ProtocolTypeWebSocket : ProtocolTypeHttp;
-    auto target_conn_info_opt = GetTargetRoute(source_connection_info_);
+        isWebSocket_ ? kProtocolTypeWebSocket : kProtocolTypeHttp;
+    auto target_conn_info_opt =
+        GetRouteTarget(source_connection_info_.http_url);
     if (!target_conn_info_opt) {
       SPDLOG_WARN("no path found for {}", source_connection_info_.http_url);
       http::response<http::string_body> err_not_found_resp{
@@ -450,10 +458,10 @@ public:
     // TODO: only for testing purpose.
     SPDLOG_INFO("[{}] {}:{}{}", target_protocol, target_address, target_port,
                 target_url_);
-    if (target_protocol == ProtocolTypeWebSocket) {
+    if (target_protocol == kProtocolTypeWebSocket) {
       handleWebSocketRequest(std::move(target_address), std::move(target_port));
       return;
-    } else if (target_protocol == ProtocolTypeHttp) {
+    } else if (target_protocol == kProtocolTypeHttp) {
       handleHttpRequest(std::move(target_address), std::move(target_port));
       return;
     }
@@ -774,7 +782,6 @@ public:
   void handleLocalFileRequest() {
     // get local file path from request url.
     std::shared_ptr<char[]> full_local_file_path =
-        // TODO: router.
         assembleFullLocalFilePath("", target_url_);
     auto full_local_file_path_str = full_local_file_path.get();
     if (!std::filesystem::exists(full_local_file_path_str) ||

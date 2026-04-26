@@ -1,5 +1,6 @@
 #include "azugate.h"
 #include "../include/config.h"
+#include "router.h"
 #include "server.hpp"
 #include "worker.hpp"
 #include <spdlog/spdlog.h>
@@ -16,12 +17,19 @@ void azugate_start() {
   SPDLOG_WARN("server exits");
 }
 
-void azugate_load_config(BindingServerConfig bindingConfig){
-  auto config = azugate::ServerConfig{
-    bindingConfig.port,
-    bindingConfig.jwt_public_key_pem 
-  };
+void azugate_load_config(BindingServerConfig bindingConfig) {
+  auto config = azugate::ServerConfig{bindingConfig.port,
+                                      bindingConfig.jwt_public_key_pem};
   azugate::LoadConfig(config);
 }
 
+void azugate_add_prefix_match_route(const char *source_url,
+                                    const char *target_url, int is_local) {
+  azugate::AddPrefixMatchRoute(source_url, target_url, is_local);
+}
+
+void azugate_add_path_match_route(const char *source_url,
+                                  const char *target_url, int is_local) {
+  azugate::AddPathMatchRoute(source_url, target_url, is_local);
+}
 }

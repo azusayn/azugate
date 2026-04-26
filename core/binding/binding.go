@@ -25,12 +25,18 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
+	"strings"
 	"unsafe"
+
+	"github.com/azusayn/azugate/internal/config"
 )
 
 type Azugate struct{}
 
-func NewAzugate(port uint16, publicKey *rsa.PublicKey) (*Azugate, error) {
+func NewAzugate(config *config.Config, publicKey *rsa.PublicKey) (*Azugate, error) {
+	azugate := &Azugate{}
+
 	pem, err := publicKeyToPEM(publicKey)
 	if err != nil {
 		return nil, err
@@ -38,17 +44,58 @@ func NewAzugate(port uint16, publicKey *rsa.PublicKey) (*Azugate, error) {
 	cPEM := C.CString(pem)
 	defer C.free(unsafe.Pointer(cPEM))
 
-	config := C.BindingServerConfig{
-		port:               C.uint16_t(port),
+	bindingConfig := C.BindingServerConfig{
+		port:               C.uint16_t(config.Port),
 		jwt_public_key_pem: cPEM,
 	}
-	C.azugate_load_config(config)
+	C.azugate_load_config(bindingConfig)
 
-	return &Azugate{}, nil
+	for _, route := range config.Routes {
+		match := route.Match
+		action := route.RouteAction
+		if path := match.Path; path != nil {
+			azugate.AddPathMatchRoute(*path, action.To, action.Local)
+			continue
+		}
+		if prefix := route.Match.Prefix; prefix != nil {
+			azugate.AddPrefixMatchRoute(*prefix, action.To, action.Local)
+			continue
+		}
+		return nil, errors.New("neither prefix nor path was found in the route element")
+	}
+
+	return azugate, nil
 }
 
 func (a *Azugate) Start() {
 	C.azugate_start()
+}
+
+func (*Azugate) AddPrefixMatchRoute(sourceURL, targetURL string, isLocal bool) {
+	sourceURL = normalizeURL(sourceURL)
+	targetURL = normalizeURL(targetURL)
+	cSourceURL := C.CString(sourceURL)
+	cTargetURL := C.CString(targetURL)
+	defer C.free(unsafe.Pointer(cSourceURL))
+	defer C.free(unsafe.Pointer(cTargetURL))
+	C.azugate_add_prefix_match_route(cSourceURL, cTargetURL, C.int(boolToInt(isLocal)))
+}
+
+func (*Azugate) AddPathMatchRoute(sourceURL, targetURL string, isLocal bool) {
+	sourceURL = normalizeURL(sourceURL)
+	targetURL = normalizeURL(targetURL)
+	cSourceURL := C.CString(sourceURL)
+	cTargetURL := C.CString(targetURL)
+	defer C.free(unsafe.Pointer(cSourceURL))
+	defer C.free(unsafe.Pointer(cTargetURL))
+	C.azugate_add_path_match_route(cSourceURL, cTargetURL, C.int(boolToInt(isLocal)))
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 func publicKeyToPEM(publicKey *rsa.PublicKey) (string, error) {
@@ -61,4 +108,17 @@ func publicKeyToPEM(publicKey *rsa.PublicKey) (string, error) {
 		Bytes: bytes,
 	}
 	return string(pem.EncodeToMemory(pemBlock)), nil
+}
+
+// nomalizeURL normalizes an URL according to the following rules:
+//  1. "" is returned directly.
+//  2. "/" is converted to "".
+//  3. Leading and trailing slashes is not required, but the result
+//     will always be formatted as "/a/b/c" (except for Rule 2).
+func normalizeURL(url string) string {
+	url = strings.Trim(url, "/")
+	if url == "" {
+		return ""
+	}
+	return "/" + url
 }
