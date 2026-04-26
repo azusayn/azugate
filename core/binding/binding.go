@@ -18,15 +18,47 @@ package binding
 #cgo LDFLAGS: -lazugate_core -lspdlog -lfmt -lz -lboost_coroutine -lboost_context -lboost_thread -lboost_date_time -lboost_regex
 #cgo LDFLAGS: -lboost_atomic -lboost_chrono -lboost_container -lboost_url -lssl -lcrypto -ldl -lstdc++ -lm
 #include "azugate.h"
+#include <stdlib.h>
 */
 import "C"
-import "crypto/rsa"
+import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"unsafe"
+)
 
 type Azugate struct{}
 
-func NewAzugate(_ *rsa.PublicKey) *Azugate {
-	return &Azugate{}
+func NewAzugate(port uint16, publicKey *rsa.PublicKey) (*Azugate, error) {
+	pem, err := publicKeyToPEM(publicKey)
+	if err != nil {
+		return nil, err
+	}
+	cPEM := C.CString(pem)
+	defer C.free(unsafe.Pointer(cPEM))
+
+	config := C.BindingServerConfig{
+		port:               C.uint16_t(port),
+		jwt_public_key_pem: cPEM,
+	}
+	C.azugate_load_config(config)
+
+	return &Azugate{}, nil
 }
+
 func (a *Azugate) Start() {
 	C.azugate_start()
+}
+
+func publicKeyToPEM(publicKey *rsa.PublicKey) (string, error) {
+	bytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return "", err
+	}
+	pemBlock := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: bytes,
+	}
+	return string(pem.EncodeToMemory(pemBlock)), nil
 }

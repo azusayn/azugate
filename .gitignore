@@ -4,3 +4,4 @@ build/
 proxy
 .idea/
 azugate
+version.go

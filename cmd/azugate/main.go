@@ -14,9 +14,15 @@ func main() {
 		slog.Error(err.Error())
 		return
 	}
-	azugate := binding.NewAzugate(&secret.PublicKey)
+	azugate, err := binding.NewAzugate(8080, &secret.PublicKey)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	azugate.Start()
+
 	for {
 		time.Sleep(time.Hour)
 	}
+
 }

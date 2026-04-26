@@ -193,7 +193,7 @@ std::optional<ConnectionInfo> GetTargetRoute(const ConnectionInfo &source) {
 
 size_t GetRouterTableSize() { return g_exact_routes.size(); }
 
-void LoadServerConfig(const ServerConfig &config) {
+void LoadConfig(ServerConfig config) {
   g_port = config.port;
   g_jwt_public_key_pem = config.jwt_public_key_pem;
   // g_ssl_crt = config[kYamlFieldCrt].as<std::string>();

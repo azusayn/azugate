@@ -99,14 +99,12 @@ std::pair<size_t, size_t> GetRateLimitorConfig();
 void AddHealthzList(std::string &&addr);
 const std::vector<std::string> &GetHealthzList();
 
-
-
 struct ServerConfig {
   uint16_t port;
   std::string jwt_public_key_pem;
 };
 
-void LoadServerConfig(const ServerConfig &config);
+void LoadConfig(ServerConfig config);
 
 } // namespace azugate
 
