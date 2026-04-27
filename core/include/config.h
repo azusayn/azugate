@@ -18,7 +18,7 @@ constexpr size_t kDefaultBufSize = 1024 * 4;
 constexpr size_t kMaxFdSize = 1024 / 2;
 // ref to Nginx, the value is 8kb, but 60kb in Envoy.
 constexpr size_t kMaxHttpHeaderSize = 1024 * 8;
-constexpr size_t kMaxHeadersNum = 20;
+constexpr size_t kMaxHeadersNum = 256;
 // yaml.
 constexpr std::string_view kDftConfigFile = "config.default.yaml";
 constexpr std::string_view kYamlFieldPort = "port";
@@ -42,7 +42,7 @@ constexpr size_t kMaxBodyBufferSize = 1024 * 1024 * 100;
 // logger
 constexpr size_t kLoggerQueueSize = 8192;
 constexpr size_t kLoggerThreadsCount = 1;
-constexpr std::string_view kDefaultLoggerName = "azugate logger"; 
+constexpr std::string_view kDefaultLoggerName = "azugate logger";
 
 // runtime shared variables.
 extern uint16_t g_port;
@@ -66,13 +66,6 @@ extern size_t g_num_token_max;
 
 // io
 extern size_t g_num_threads;
-
-// exteranl auth.
-extern std::string g_external_auth_domain;
-extern std::string g_external_auth_client_id;
-extern std::string g_external_auth_client_secret;
-extern std::string g_external_auth_callback_url;
-
 
 void IgnoreSignalPipe();
 

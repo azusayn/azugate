@@ -1,7 +1,6 @@
 #ifndef __SERVICES_H
 #define __SERVICES_H
 
-#include "auth.h"
 #include "compression.hpp"
 #include "config.h"
 #include "crequest.h"
@@ -52,6 +51,7 @@
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <utility>
 #include <vector>
@@ -201,16 +201,16 @@ inline bool compressAndWriteBody(const boost::shared_ptr<T> sock_ptr,
 inline std::string
 extractAzugateAccessTokenFromCookie(const std::string_view &cookie_header) {
   size_t token_pos = cookie_header.find("azugate_access_token=");
-  if (token_pos != std::string_view::npos) {
-    // move past 'azugate_access_token='
-    token_pos += 21;
-    size_t token_end = cookie_header.find(';', token_pos);
-    if (token_end == std::string_view::npos) {
-      token_end = cookie_header.length();
-    }
-    return std::string(cookie_header.substr(token_pos, token_end - token_pos));
+  if (token_pos == std::string_view::npos) {
+    return "";
   }
-  return "";
+  // move past 'azugate_access_token='
+  token_pos += 21;
+  size_t token_end = cookie_header.find(';', token_pos);
+  if (token_end == std::string_view::npos) {
+    token_end = cookie_header.length();
+  }
+  return std::string(cookie_header.substr(token_pos, token_end - token_pos));
 }
 
 // helper function to extract token from Authorization header
@@ -233,13 +233,14 @@ template <typename T>
 inline bool authentication(network::PicoHttpRequest &request,
                            boost::shared_ptr<T> sock_ptr,
                            const std::string &token) {
-  // TODO:; only for testing...
+
   if (g_jwt_public_key_pem.length() != 0) {
     return true;
   }
-  if (token.length() != 0 && utils::VerifyToken(token, g_jwt_public_key_pem)) {
-    return true;
-  }
+  // if (token.length() != 0 && utils::VerifyToken(token, g_jwt_public_key_pem))
+  // {
+  //   return true;
+  // }
   // TODO: the external auth type should be configurable.
   // additional auth process (currently support OAuth)
   return true;
@@ -250,11 +251,14 @@ inline bool extractMetaFromHeaders(utils::CompressionType &compression_type,
                                    std::string &token,
                                    size_t &request_content_length,
                                    bool &isWebSocket) {
-  if (request.num_headers <= 0 || request.num_headers > kMaxHeadersNum) {
+  if (request.num_headers <= 0) {
     SPDLOG_WARN("No headers found in the request.");
     return false;
   }
-
+  if (request.num_headers > kMaxHeadersNum) {
+    SPDLOG_WARN("num of headers excceed the max limit: {}", kMaxHeadersNum);
+    return false;
+  }
   for (size_t i = 0; i < request.num_headers; ++i) {
     auto &header = request.headers[i];
     // validate the header struct.
@@ -269,9 +273,9 @@ inline bool extractMetaFromHeaders(utils::CompressionType &compression_type,
       return false;
     }
     auto header_value = std::string(header.value, header.value_len);
-    // header switch.
     std::string header_name(header.name, header.name_len);
     header_name = utils::toLower(header_name);
+
     if (header_name == CRequest::kHeaderFieldAcceptEncoding) {
       compression_type = utils::GetCompressionType(header_value);
       continue;
@@ -295,6 +299,7 @@ inline bool extractMetaFromHeaders(utils::CompressionType &compression_type,
                     utils::toLower(CRequest::kConnectionUpgrade);
       continue;
     }
+
     // TODO: fix it when needed.
     // if (header_name == CRequest::kHeaderAuthorization) {
     //   std::string_view header_value(header.value, header.value_len);
@@ -389,6 +394,7 @@ public:
       async_accpet_cb_();
       return;
     }
+
     if (g_http_external_authorization && !isWebSocket_ &&
         !authentication(request_, sock_ptr_, token_)) {
       async_accpet_cb_();
@@ -441,6 +447,10 @@ public:
       return;
     }
     target_url_ = target_conn_info_opt->http_url;
+    // normalize empty path to "/" to comply with HTTP standards.
+    if (target_url_ == "") {
+      target_url_ = "/";
+    }
 
     if (!target_conn_info_opt->is_remote) {
       handleLocalFileRequest();
@@ -450,8 +460,11 @@ public:
     auto target_address = target_conn_info_opt->downstream_address;
     auto target_port = target_conn_info_opt->downstream_port;
     auto target_protocol = target_conn_info_opt->type;
+    target_address = "baidu.com";
+    target_port = 80;
+    target_protocol = kProtocolTypeHttp;
     if (target_address == "") {
-      SPDLOG_ERROR("invalid target address");
+      SPDLOG_ERROR("empty target IPv4/6 address");
       async_accpet_cb_();
       return;
     }

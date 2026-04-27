@@ -9,6 +9,7 @@ extern "C" {
 
 void azugate_start() {
   using namespace azugate;
+  IgnoreSignalPipe();
   auto io_context_ptr = boost::make_shared<boost::asio::io_context>();
   StartHealthCheckWorker(io_context_ptr);
   Server s(io_context_ptr, g_port);

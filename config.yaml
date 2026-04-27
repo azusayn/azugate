@@ -4,4 +4,4 @@ routes:
       path: "/"
     route:
       local: false
-      to: "baidu.com"
+      to: "/"

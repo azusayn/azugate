@@ -132,7 +132,6 @@ std::optional<ConnectionInfo> GetRouteTarget(const std::string source_url) {
   }
 
   if (!longest_match) {
-    SPDLOG_WARN("no path found for: {}", source_url);
     return std::nullopt;
   }
   return longest_match->GetNextTarget();
